@@ -28,7 +28,7 @@ module Capybara::Cuprite
       delegate [:command, :wait, :subscribe] => :@client
       delegate targets: :@browser
 
-      attr_reader :target_id, :execution_context_id
+      attr_reader :target_id, :execution_context_id, :status_code
 
       def initialize(target_id, browser, logger)
         @target_id = target_id
@@ -108,6 +108,17 @@ module Capybara::Cuprite
             command("DOM.getDocument", depth: 0)["root"]
           end
         end
+        subscribe("Network.requestWillBeSent") do |params|
+          @request_id = params["requestId"] if params["type"] == "Document"
+        end
+        subscribe("Network.responseReceived") do |params|
+          if params["requestId"] == @request_id
+            @status_code = params.dig("response", "status")
+          end
+        end
+        # subscribe("Page.domContentEventFired") do |params|
+        #   command("DOM.getDocument", depth: 0)["root"]
+        # end
       end
 
       def prepare_page
@@ -115,6 +126,7 @@ module Capybara::Cuprite
         command("DOM.enable")
         command("CSS.enable")
         command("Runtime.enable")
+        command("Network.enable")
         command("Page.addScriptToEvaluateOnNewDocument", source: read("index.js"))
 
         response = command("Page.getNavigationHistory")
