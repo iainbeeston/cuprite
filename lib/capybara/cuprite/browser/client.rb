@@ -2,6 +2,7 @@
 
 require "timeout"
 require "capybara/cuprite/browser/web_socket"
+require "concurrent-edge"
 
 module Capybara::Cuprite
   class Browser
@@ -14,18 +15,31 @@ module Capybara::Cuprite
         @browser = browser
         @commands = Queue.new
         @ws = WebSocket.new(ws_url, @browser.logger)
+        @alive = true
 
-        @thread = Thread.new do
-          while message = @ws.messages.pop
-            method, params = message.values_at("method", "params")
-            if method
-              @subscribed[method].each { |b| b.call(params) }
-            else
-              @commands.push(message)
+        Concurrent::Channel.go_loop do
+          return false unless @alive
+
+          Concurrent::Channel.select do |s|
+            s.take(@ws.channel) do |message|
+              if message
+                method, params = message.values_at("method", "params")
+                if method
+                  @subscribed[method].each { |b| b.call(params) }
+                else
+                  @commands.push(message)
+                end
+              else
+                @commands.close
+                @alive = false
+              end
+            end
+            s.default do
+              sleep(0.1)
             end
           end
 
-          @commands.close
+          true
         end
       end
 
@@ -53,7 +67,7 @@ module Capybara::Cuprite
 
       def close
         @ws.close
-        @thread.kill
+        @alive = false
       end
 
       private

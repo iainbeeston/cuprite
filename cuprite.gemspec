@@ -19,9 +19,10 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = ">= 2.3.0"
 
-  s.add_runtime_dependency "capybara",         ">= 2.1", "< 4"
-  s.add_runtime_dependency "websocket-driver", "~> 0.7"
-  s.add_runtime_dependency "cliver",           "~> 0.3"
+  s.add_runtime_dependency "capybara",              ">= 2.1", "< 4"
+  s.add_runtime_dependency "websocket-driver",      "~> 0.7"
+  s.add_runtime_dependency "cliver",                "~> 0.3"
+  s.add_runtime_dependency "concurrent-ruby-edge",  "~> 0.4"
 
   s.add_development_dependency "image_size", "~> 2.0"
   s.add_development_dependency "pdf-reader", "~> 2.1"
