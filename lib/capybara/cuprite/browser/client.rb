@@ -36,7 +36,20 @@ module Capybara::Cuprite
       end
 
       def wait(id:)
-        message = Timeout.timeout(@browser.timeout, TimeoutError) { @commands.pop }
+        timeout = @browser.timeout
+        start = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
+        max_time = start + timeout
+        message = nil
+        message_set = false
+        while !message_set && (now = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)) < max_time
+          begin
+            message = @commands.pop(true)
+            message_set = true
+          rescue ThreadError
+            sleep 0.05
+          end
+        end
+        raise TimeoutError if now >= max_time
         raise DeadBrowser unless message
         raise IdError if message["id"] != id
         error, response = message.values_at("error", "result")
