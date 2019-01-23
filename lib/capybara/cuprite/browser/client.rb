@@ -17,7 +17,7 @@ module Capybara::Cuprite
         @ws = WebSocket.new(ws_url, @browser.logger)
 
         @thread = Thread.new do
-          while message = @ws.messages.pop
+          while !@ws.messages.closed? && message = @ws.messages.pop
             method, params = message.values_at("method", "params")
             if method
               @subscribed[method].each { |b| b.call(params) }
@@ -28,6 +28,7 @@ module Capybara::Cuprite
               end
             end
           end
+          raise DeadBrowser
         end
       end
 
@@ -48,7 +49,6 @@ module Capybara::Cuprite
             end
           end
         end
-        raise DeadBrowser unless message
         error, response = message.values_at("error", "result")
         raise BrowserError.new(error) if error
         response
