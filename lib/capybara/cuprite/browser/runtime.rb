@@ -144,22 +144,11 @@ module Capybara::Cuprite
       end
 
       def reduce_props(object_id, to)
-        if cyclic?(object_id).dig("result", "value")
-          return "(cyclic structure)"
-        else
-          props = command("Runtime.getProperties", objectId: object_id)
-          props["result"].reduce(to) do |memo, prop|
-            next(memo) unless prop["enumerable"]
-            yield(memo, prop["name"], prop["value"])
-          end
+        props = command("Runtime.getProperties", objectId: object_id)
+        props["result"].reduce(to) do |memo, prop|
+          next(memo) unless prop["enumerable"]
+          yield(memo, prop["name"], prop["value"])
         end
-      end
-
-      def cyclic?(object_id)
-        command("Runtime.callFunctionOn",
-                objectId: object_id,
-                returnByValue: true,
-                functionDeclaration: "function() { return _cuprite.isCyclic(this); }")
       end
     end
   end

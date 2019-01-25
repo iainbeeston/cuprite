@@ -1,3 +1,4 @@
+# coding: utf-8
 # frozen_string_literal: true
 
 require "spec_helper"
@@ -354,23 +355,6 @@ describe Capybara::Session do
       expect(@session.evaluate_script("new Function")).to eq({})
 
       expect { @session.evaluate_script(%(throw "smth")) }.to raise_error(Capybara::Cuprite::JavaScriptError)
-    end
-
-    it "ignores cyclic structure errors in evaluate_script" do
-      code = <<-JS
-        (function() {
-          var a = {};
-          var b = {};
-          var c = {};
-          c.a = a;
-          a.a = a;
-          a.b = b;
-          a.c = c;
-          return a;
-        })()
-      JS
-
-      expect(@session.evaluate_script(code)).to eq("(cyclic structure)")
     end
 
     it "synchronises page loads properly" do
@@ -1055,3 +1039,4 @@ describe Capybara::Session do
     end
   end
 end
+
